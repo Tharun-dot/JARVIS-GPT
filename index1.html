@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jarvis-gpt</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Roboto", sans-serif;
+        background-color: #0d1117;
+        color: #c9d1d9;
+        text-align: center;
+      }
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 40px;
+        background-color: #0d1117;
+      }
+      .navbar a {
+        color: #c9d1d9;
+        text-decoration: none;
+        margin: 0 10px;
+      }
+      .navbar a:hover {
+        text-decoration: underline;
+      }
+      .hero {
+        padding: 100px 20px;
+      }
+      .hero h1 {
+        font-size: 48px;
+        margin-bottom: 20px;
+      }
+      .hero p {
+        font-size: 20px;
+        margin-bottom: 40px;
+      }
+      .chat-container {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(0, 234, 255, 0.5);
+      }
+      .chat-box {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #30363d;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        background-color: #0d1117;
+      }
+      .message {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      .message h3 {
+        color: rgb(230, 230, 232);
+        margin-bottom: 10px;
+      }
+      .message ul {
+        list-style-type: square;
+        padding-left: 20px;
+      }
+      .message ul li {
+        margin-bottom: 5px;
+      }
+      .input-section {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .input-section input {
+        flex-grow: 1;
+        background: none;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        color: #c9d1d9;
+        font-size: 16px;
+        padding: 10px;
+        outline: none;
+      }
+      .input-section button {
+        background-color: rgb(97, 82, 159);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 8px;
+      }
+      .input-section button:hover {
+        background-color: rgba(141, 178, 253, 0.95);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="logo">
+        <img alt="Logo" src="https://via.placeholder.com/30" height="30" />
+      </div>
+      <div class="nav-links">
+        <a href="#">Features</a>
+        <a href="#">Teams</a>
+        <a href="#">Guides</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="nav-actions">
+        <a href="#">Contact sales</a>
+        <a href="#">Log in</a>
+        <button class="start-building">Start building</button>
+      </div>
+    </div>
+    <div class="hero">
+      <h1>Jarvis-GPT</h1>
+      <p>Ask anything and get instant responses from Jarvis.</p>
+      <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-section">
+          <input
+            id="user-input"
+            placeholder="What would you like to ask Jarvis?"
+            type="text"
+          />
+          <button id="ask-jarvis">Ask Jarvis</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function sendMessage() {
+        const userInput = document.getElementById("user-input").value.trim();
+        const chatBox = document.getElementById("chat-box");
+
+        if (!userInput) {
+          alert("Please type a query!");
+          return;
+        }
+
+        // Display user message
+        const userMessage = document.createElement("div");
+        userMessage.classList.add("message");
+        userMessage.innerHTML = `<h3>You:</h3><p>${userInput}</p>`;
+        chatBox.appendChild(userMessage);
+
+        // Clear input field
+        document.getElementById("user-input").value = "";
+
+        // Display bot is thinking
+        const botThinking = document.createElement("div");
+        botThinking.classList.add("message");
+        botThinking.innerHTML = `<h3>Jarvis:</h3><p>Thinking...</p>`;
+        chatBox.appendChild(botThinking);
+
+        try {
+          const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_input: userInput }),
+          });
+          const data = await response.json();
+
+          // Replace thinking message with structured response, adding "Jarvis:"
+          botThinking.innerHTML =
+            `<h3>Jarvis:</h3>` +
+            formatBotResponse(
+              data.response || "Sorry, I couldn't process that."
+            );
+        } catch (error) {
+          botThinking.innerHTML = `<h3>Jarvis:</h3><p>Error: ${error.message}</p>`;
+        }
+
+        // Scroll to the latest message
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      function formatBotResponse(responseText) {
+        // Parse and structure the response (example for structured categories)
+        const sections = responseText.split("\n\n");
+        return sections
+          .map((section) => {
+            const [title, ...items] = section
+              .split("\n")
+              .map((item) => item.trim());
+            const itemList = items.map((item) => `<li>${item}</li>`).join("");
+            return `<h3>${title}</h3><ul>${itemList}</ul>`;
+          })
+          .join("");
+      }
+
+      // Event listener for the button
+      document
+        .getElementById("ask-jarvis")
+        .addEventListener("click", sendMessage);
+
+      // Event listener for Enter key
+      document
+        .getElementById("user-input")
+        .addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            sendMessage();
+          }
+        });
+    </script>
+  </body>
+</html>
